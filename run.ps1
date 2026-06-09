@@ -97,13 +97,39 @@ if ($currentPath -notlike "*$installDir*") {
 
 # Check environment variables
 Write-Host ""
-if (-not $env:TELEGRAM_BOT_TOKEN) {
-    Write-Host "[!] WARNING: TELEGRAM_BOT_TOKEN is not set." -ForegroundColor Red
-    Write-Host "    Set it with: setx TELEGRAM_BOT_TOKEN `"your-token-here`"" -ForegroundColor Yellow
+
+# --- TELEGRAM_BOT_TOKEN ---
+$tokenValue = [Environment]::GetEnvironmentVariable("TELEGRAM_BOT_TOKEN", "User")
+if (-not $tokenValue) {
+    Write-Host "[!] TELEGRAM_BOT_TOKEN is not set in OS environment." -ForegroundColor Red
+    $tokenValue = Read-Host "    Enter your TELEGRAM_BOT_TOKEN"
+    if ($tokenValue) {
+        [Environment]::SetEnvironmentVariable("TELEGRAM_BOT_TOKEN", $tokenValue, "User")
+        $env:TELEGRAM_BOT_TOKEN = $tokenValue
+        Write-Host "[+] TELEGRAM_BOT_TOKEN saved to OS environment (User scope)." -ForegroundColor Green
+    } else {
+        Write-Host "[!] No value entered. TELEGRAM_BOT_TOKEN remains unset." -ForegroundColor Yellow
+    }
+} else {
+    $env:TELEGRAM_BOT_TOKEN = $tokenValue
+    Write-Host "[+] TELEGRAM_BOT_TOKEN loaded from OS environment." -ForegroundColor Green
 }
-if (-not $env:ALLOWED_CHAT_IDS) {
-    Write-Host "[!] WARNING: ALLOWED_CHAT_IDS is not set." -ForegroundColor Red
-    Write-Host "    Set it with: setx ALLOWED_CHAT_IDS `"your-chat-id`"" -ForegroundColor Yellow
+
+# --- ALLOWED_CHAT_IDS ---
+$chatValue = [Environment]::GetEnvironmentVariable("ALLOWED_CHAT_IDS", "User")
+if (-not $chatValue) {
+    Write-Host "[!] ALLOWED_CHAT_IDS is not set in OS environment." -ForegroundColor Red
+    $chatValue = Read-Host "    Enter your ALLOWED_CHAT_IDS"
+    if ($chatValue) {
+        [Environment]::SetEnvironmentVariable("ALLOWED_CHAT_IDS", $chatValue, "User")
+        $env:ALLOWED_CHAT_IDS = $chatValue
+        Write-Host "[+] ALLOWED_CHAT_IDS saved to OS environment (User scope)." -ForegroundColor Green
+    } else {
+        Write-Host "[!] No value entered. ALLOWED_CHAT_IDS remains unset." -ForegroundColor Yellow
+    }
+} else {
+    $env:ALLOWED_CHAT_IDS = $chatValue
+    Write-Host "[+] ALLOWED_CHAT_IDS loaded from OS environment." -ForegroundColor Green
 }
 
 # Run the binary
