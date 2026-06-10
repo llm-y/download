@@ -29,15 +29,65 @@ try {
     exit 1
 }
 
-# Check environment variables
+# Check and set environment variables
 Write-Host ""
-if (-not $env:TELEGRAM_BOT_TOKEN) {
-    Write-Host "[!] WARNING: TELEGRAM_BOT_TOKEN is not set." -ForegroundColor Red
-    Write-Host "    Set it with: setx TELEGRAM_BOT_TOKEN `"your-token-here`"" -ForegroundColor Yellow
+
+# --- TELEGRAM_BOT_TOKEN ---
+$tokenValue = [Environment]::GetEnvironmentVariable("TELEGRAM_BOT_TOKEN", "User")
+if (-not $tokenValue) {
+    Write-Host "[!] TELEGRAM_BOT_TOKEN is not set in OS environment." -ForegroundColor Red
+    $tokenValue = Read-Host "    Enter your TELEGRAM_BOT_TOKEN"
+    if ($tokenValue) {
+        [Environment]::SetEnvironmentVariable("TELEGRAM_BOT_TOKEN", $tokenValue, "User")
+        $env:TELEGRAM_BOT_TOKEN = $tokenValue
+        Write-Host "[+] TELEGRAM_BOT_TOKEN saved to OS environment (User scope)." -ForegroundColor Green
+    } else {
+        Write-Host "[!] No value entered. TELEGRAM_BOT_TOKEN remains unset." -ForegroundColor Yellow
+    }
+} else {
+    $env:TELEGRAM_BOT_TOKEN = $tokenValue
+    Write-Host "[+] TELEGRAM_BOT_TOKEN loaded from OS environment." -ForegroundColor Green
 }
-if (-not $env:ALLOWED_CHAT_IDS) {
-    Write-Host "[!] WARNING: ALLOWED_CHAT_IDS is not set." -ForegroundColor Red
-    Write-Host "    Set it with: setx ALLOWED_CHAT_IDS `"your-chat-id`"" -ForegroundColor Yellow
+
+# --- ALLOWED_CHAT_IDS ---
+$chatValue = [Environment]::GetEnvironmentVariable("ALLOWED_CHAT_IDS", "User")
+if (-not $chatValue) {
+    Write-Host "[!] ALLOWED_CHAT_IDS is not set in OS environment." -ForegroundColor Red
+    $chatValue = Read-Host "    Enter your ALLOWED_CHAT_IDS"
+    if ($chatValue) {
+        [Environment]::SetEnvironmentVariable("ALLOWED_CHAT_IDS", $chatValue, "User")
+        $env:ALLOWED_CHAT_IDS = $chatValue
+        Write-Host "[+] ALLOWED_CHAT_IDS saved to OS environment (User scope)." -ForegroundColor Green
+    } else {
+        Write-Host "[!] No value entered. ALLOWED_CHAT_IDS remains unset." -ForegroundColor Yellow
+    }
+} else {
+    $env:ALLOWED_CHAT_IDS = $chatValue
+    Write-Host "[+] ALLOWED_CHAT_IDS loaded from OS environment." -ForegroundColor Green
+}
+
+# --- GEMINI_CLI_TRUST_WORKSPACE ---
+$geminiValue = [Environment]::GetEnvironmentVariable("GEMINI_CLI_TRUST_WORKSPACE", "User")
+if (-not $geminiValue) {
+    [Environment]::SetEnvironmentVariable("GEMINI_CLI_TRUST_WORKSPACE", "true", "User")
+    $env:GEMINI_CLI_TRUST_WORKSPACE = "true"
+    Write-Host "[+] GEMINI_CLI_TRUST_WORKSPACE set to 'true' in OS environment (User scope)." -ForegroundColor Green
+} else {
+    $env:GEMINI_CLI_TRUST_WORKSPACE = $geminiValue
+    Write-Host "[+] GEMINI_CLI_TRUST_WORKSPACE loaded from OS environment." -ForegroundColor Green
+}
+
+# --- API_TOKEN ---
+$apiTokenValue = [Environment]::GetEnvironmentVariable("API_TOKEN", "User")
+if (-not $apiTokenValue) {
+    $apiTokenValue = -join ((48..57) + (65..90) + (97..122) | Get-Random -Count 32 | ForEach-Object {[char]$_})
+    [Environment]::SetEnvironmentVariable("API_TOKEN", $apiTokenValue, "User")
+    $env:API_TOKEN = $apiTokenValue
+    Write-Host "[+] API_TOKEN generated and saved to OS environment (User scope)." -ForegroundColor Green
+    Write-Host "    Your API_TOKEN: $apiTokenValue" -ForegroundColor Cyan
+} else {
+    $env:API_TOKEN = $apiTokenValue
+    Write-Host "[+] API_TOKEN loaded from OS environment." -ForegroundColor Green
 }
 
 # Run the binary
