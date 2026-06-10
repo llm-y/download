@@ -143,6 +143,19 @@ if (-not $geminiValue) {
     Write-Host "[+] GEMINI_CLI_TRUST_WORKSPACE loaded from OS environment." -ForegroundColor Green
 }
 
+# --- API_TOKEN ---
+$apiTokenValue = [Environment]::GetEnvironmentVariable("API_TOKEN", "User")
+if (-not $apiTokenValue) {
+    $apiTokenValue = -join ((48..57) + (65..90) + (97..122) | Get-Random -Count 32 | ForEach-Object {[char]$_})
+    [Environment]::SetEnvironmentVariable("API_TOKEN", $apiTokenValue, "User")
+    $env:API_TOKEN = $apiTokenValue
+    Write-Host "[+] API_TOKEN generated and saved to OS environment (User scope)." -ForegroundColor Green
+    Write-Host "    Your API_TOKEN: $apiTokenValue" -ForegroundColor Cyan
+} else {
+    $env:API_TOKEN = $apiTokenValue
+    Write-Host "[+] API_TOKEN loaded from OS environment." -ForegroundColor Green
+}
+
 # Run the binary
 Write-Host ""
 Write-Host "[*] Starting rprompt..." -ForegroundColor Yellow
