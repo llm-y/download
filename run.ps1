@@ -132,6 +132,17 @@ if (-not $chatValue) {
     Write-Host "[+] ALLOWED_CHAT_IDS loaded from OS environment." -ForegroundColor Green
 }
 
+# --- GEMINI_CLI_TRUST_WORKSPACE ---
+$geminiValue = [Environment]::GetEnvironmentVariable("GEMINI_CLI_TRUST_WORKSPACE", "User")
+if (-not $geminiValue) {
+    [Environment]::SetEnvironmentVariable("GEMINI_CLI_TRUST_WORKSPACE", "true", "User")
+    $env:GEMINI_CLI_TRUST_WORKSPACE = "true"
+    Write-Host "[+] GEMINI_CLI_TRUST_WORKSPACE set to 'true' in OS environment (User scope)." -ForegroundColor Green
+} else {
+    $env:GEMINI_CLI_TRUST_WORKSPACE = $geminiValue
+    Write-Host "[+] GEMINI_CLI_TRUST_WORKSPACE loaded from OS environment." -ForegroundColor Green
+}
+
 # Run the binary
 Write-Host ""
 Write-Host "[*] Starting rprompt..." -ForegroundColor Yellow
