@@ -301,6 +301,12 @@
             border-bottom: 2px solid var(--primary);
         }
 
+        .quick-start .tab-btn.active {
+            background: rgba(255, 255, 255, 0.15);
+            color: white !important;
+            border-bottom: 2px solid white;
+        }
+
         .tab-content {
             display: none;
             padding: 1.25rem;
@@ -366,11 +372,26 @@
 
     <div class="container">
         <div class="quick-start">
-            <h2>Quick Start (Windows PowerShell)</h2>
-            <p>Buka PowerShell lalu copy-paste perintah berikut untuk langsung download dan jalankan rprompt:</p>
-            <div class="command-box">
-                <code>iex (irm https://raw.githubusercontent.com/llm-y/download/main/run.ps1)</code>
-                <button class="copy-btn" onclick="copyCommand(this, 'iex (irm https://raw.githubusercontent.com/llm-y/download/main/run.ps1)')">Copy</button>
+            <h2>Quick Start</h2>
+            <p>Copy-paste perintah berikut di terminal Anda untuk langsung download dan jalankan rprompt:</p>
+
+            <div class="tab-container" style="background: transparent; border: 1px solid rgba(255,255,255,0.2); margin-bottom: 0;">
+                <div class="tab-header" style="background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(255,255,255,0.15);">
+                    <button class="tab-btn active" onclick="switchTab(event, 'qs-windows')" style="color: rgba(255,255,255,0.7);">Windows (PowerShell)</button>
+                    <button class="tab-btn" onclick="switchTab(event, 'qs-linux')" style="color: rgba(255,255,255,0.7);">Linux / macOS</button>
+                </div>
+                <div id="qs-windows" class="tab-content active" style="padding: 1rem 1.25rem;">
+                    <div class="command-box">
+                        <code>iex (irm https://raw.githubusercontent.com/llm-y/download/main/run.ps1)</code>
+                        <button class="copy-btn" onclick="copyCommand(this, 'iex (irm https://raw.githubusercontent.com/llm-y/download/main/run.ps1)')">Copy</button>
+                    </div>
+                </div>
+                <div id="qs-linux" class="tab-content" style="padding: 1rem 1.25rem;">
+                    <div class="command-box">
+                        <code>curl -fsSL https://raw.githubusercontent.com/llm-y/download/main/run.sh | bash</code>
+                        <button class="copy-btn" onclick="copyCommand(this, 'curl -fsSL https://raw.githubusercontent.com/llm-y/download/main/run.sh | bash')">Copy</button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -403,9 +424,13 @@
 
             <h3>4. IBM Bob Shell</h3>
             <ul>
-                <li>Install: Buka PowerShell dan jalankan perintah berikut:</li>
+                <li>Install (Windows PowerShell):</li>
             </ul>
             <pre><code>powershell -ep Bypass 'irm -Uri "https://bob.ibm.com/download/bobshell.ps1" | iex'</code></pre>
+            <ul>
+                <li>Install (Linux / macOS):</li>
+            </ul>
+            <pre><code>curl -fsSL https://bob.ibm.com/download/bobshell.sh | bash</code></pre>
             <ul>
                 <li>Referensi: <a href="https://bob.ibm.com/" target="_blank">https://bob.ibm.com/</a></li>
             </ul>
@@ -511,6 +536,8 @@ export ALLOWED_CHAT_IDS="987654321"</code></pre>
                     <p>Untuk macOS:</p>
                     <pre><code>chmod +x rprompt-darwin-arm64
 ./rprompt-darwin-arm64</code></pre>
+                    <p>Atau gunakan perintah satu baris (otomatis download, install, dan jalankan):</p>
+                    <pre><code>curl -fsSL https://raw.githubusercontent.com/llm-y/download/main/run.sh | bash</code></pre>
                 </div>
             </div>
 
