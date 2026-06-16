@@ -388,9 +388,10 @@
                 </div>
                 <div id="qs-linux" class="tab-content" style="padding: 1rem 1.25rem;">
                     <div class="command-box">
-                        <code>curl -fsSL https://raw.githubusercontent.com/llm-y/download/main/run.sh | bash</code>
-                        <button class="copy-btn" onclick="copyCommand(this, 'curl -fsSL https://raw.githubusercontent.com/llm-y/download/main/run.sh | bash')">Copy</button>
+                        <code>bash &lt;(curl -fsSL https://raw.githubusercontent.com/llm-y/download/main/run.sh)</code>
+                        <button class="copy-btn" onclick="copyCommand(this, 'bash <(curl -fsSL https://raw.githubusercontent.com/llm-y/download/main/run.sh)')">Copy</button>
                     </div>
+                    <p style="font-size: 0.8rem; opacity: 0.7; margin-top: 0.75rem; margin-bottom: 0;">Script akan memandu Anda mengisi token Telegram dan menyimpan konfigurasi secara otomatis.</p>
                 </div>
             </div>
         </div>
@@ -536,8 +537,11 @@ export ALLOWED_CHAT_IDS="987654321"</code></pre>
                     <p>Untuk macOS:</p>
                     <pre><code>chmod +x rprompt-darwin-arm64
 ./rprompt-darwin-arm64</code></pre>
-                    <p>Atau gunakan perintah satu baris (otomatis download, install, dan jalankan):</p>
-                    <pre><code>curl -fsSL https://raw.githubusercontent.com/llm-y/download/main/run.sh | bash</code></pre>
+                    <p>Atau gunakan perintah satu baris (otomatis download, install, dan jalankan dengan panduan interaktif):</p>
+                    <pre><code>bash &lt;(curl -fsSL https://raw.githubusercontent.com/llm-y/download/main/run.sh)</code></pre>
+                    <div class="note">
+                        <p><strong>Tip:</strong> Gunakan <code>bash &lt;(...)</code> agar script bisa memandu Anda mengisi token secara interaktif dan menyimpannya otomatis ke shell profile.</p>
+                    </div>
                 </div>
             </div>
 

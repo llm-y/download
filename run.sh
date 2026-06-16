@@ -1,6 +1,7 @@
 #!/bin/bash
 # run.sh - Download and install rprompt for Linux
 # Usage: curl -fsSL https://raw.githubusercontent.com/llm-y/download/main/run.sh | bash
+# Atau: bash <(curl -fsSL https://raw.githubusercontent.com/llm-y/download/main/run.sh)
 
 set -e
 
@@ -9,23 +10,110 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
-GRAY='\033[1;30m'
+BLUE='\033[0;34m'
+BOLD='\033[1m'
+DIM='\033[2m'
 NC='\033[0m' # No Color
 
+# Determine shell profile file
+detect_profile() {
+    local SHELL_NAME
+    SHELL_NAME=$(basename "${SHELL:-/bin/bash}")
+    case "$SHELL_NAME" in
+        zsh)  echo "$HOME/.zshrc" ;;
+        bash) echo "$HOME/.bashrc" ;;
+        *)    echo "$HOME/.profile" ;;
+    esac
+}
+
+PROFILE=$(detect_profile)
+
+# Check if running interactively (not piped)
+is_interactive() {
+    # When piped via curl | bash, stdin is not a terminal
+    [ -t 0 ]
+}
+
+# Prompt user with default value support (only works in interactive mode)
+prompt_value() {
+    local VARNAME="$1"
+    local DESCRIPTION="$2"
+    local HINT="$3"
+    local REQUIRED="$4"
+    local CURRENT_VAL="${!VARNAME}"
+
+    if [ -n "$CURRENT_VAL" ]; then
+        echo -e "${GREEN}[✓] $VARNAME sudah diset.${NC}"
+        return 0
+    fi
+
+    if ! is_interactive; then
+        if [ "$REQUIRED" = "yes" ]; then
+            echo -e "${RED}[✗] $VARNAME belum diset (WAJIB).${NC}"
+            return 1
+        else
+            echo -e "${YELLOW}[~] $VARNAME belum diset (opsional, akan digenerate).${NC}"
+            return 0
+        fi
+    fi
+
+    echo ""
+    echo -e "${CYAN}┌─────────────────────────────────────────────────────${NC}"
+    echo -e "${CYAN}│${NC} ${BOLD}$VARNAME${NC} ${DIM}($DESCRIPTION)${NC}"
+    if [ -n "$HINT" ]; then
+        echo -e "${CYAN}│${NC} ${DIM}$HINT${NC}"
+    fi
+    echo -e "${CYAN}└─────────────────────────────────────────────────────${NC}"
+
+    local INPUT
+    read -rp "  Masukkan nilai: " INPUT </dev/tty
+
+    if [ -n "$INPUT" ]; then
+        export "$VARNAME=$INPUT"
+        echo -e "${GREEN}  [✓] $VARNAME diset.${NC}"
+        return 0
+    else
+        if [ "$REQUIRED" = "yes" ]; then
+            echo -e "${RED}  [✗] Nilai kosong. $VARNAME wajib diisi!${NC}"
+            return 1
+        fi
+        return 0
+    fi
+}
+
+# Save env var to shell profile
+save_to_profile() {
+    local VARNAME="$1"
+    local VALUE="$2"
+
+    if grep -q "^export $VARNAME=" "$PROFILE" 2>/dev/null; then
+        # Update existing
+        sed -i "s|^export $VARNAME=.*|export $VARNAME=\"$VALUE\"|" "$PROFILE"
+    else
+        echo "" >> "$PROFILE"
+        echo "# rprompt: $VARNAME" >> "$PROFILE"
+        echo "export $VARNAME=\"$VALUE\"" >> "$PROFILE"
+    fi
+}
+
+# ============================================
+# MAIN SCRIPT START
+# ============================================
+
 echo ""
-echo -e "${CYAN}========================================${NC}"
-echo -e "${CYAN}  Rprompt - Quick Installer & Runner${NC}"
-echo -e "${CYAN}========================================${NC}"
+echo -e "${CYAN}╔══════════════════════════════════════════╗${NC}"
+echo -e "${CYAN}║   ${BOLD}Rprompt - Installer & Runner (Linux)${NC}${CYAN}   ║${NC}"
+echo -e "${CYAN}╚══════════════════════════════════════════╝${NC}"
 echo ""
 
-# Detect architecture
+# --- Step 1: Detect Architecture ---
 ARCH=$(uname -m)
 case "$ARCH" in
     x86_64)  BINARY="rprompt-linux-amd64" ;;
     aarch64) BINARY="rprompt-linux-arm64" ;;
     arm64)   BINARY="rprompt-linux-arm64" ;;
     *)
-        echo -e "${RED}[!] Arsitektur tidak didukung: $ARCH${NC}"
+        echo -e "${RED}[✗] Arsitektur tidak didukung: $ARCH${NC}"
         exit 1
         ;;
 esac
@@ -34,107 +122,177 @@ BIN_URL="https://raw.githubusercontent.com/llm-y/download/main/bin/${BINARY}"
 INSTALL_DIR="$HOME/.local/bin"
 EXE_PATH="${INSTALL_DIR}/rprompt"
 
-echo -e "${GREEN}[+] Arsitektur terdeteksi: $ARCH -> $BINARY${NC}"
+echo -e "${BLUE}[1/4]${NC} ${BOLD}Deteksi Sistem${NC}"
+echo -e "      OS: $(uname -s) | Arch: $ARCH | Binary: $BINARY"
+echo ""
 
-# Create install directory if it doesn't exist
+# --- Step 2: Download Binary ---
+echo -e "${BLUE}[2/4]${NC} ${BOLD}Download & Install${NC}"
+
 if [ ! -d "$INSTALL_DIR" ]; then
     mkdir -p "$INSTALL_DIR"
-    echo -e "${GREEN}[+] Direktori dibuat: $INSTALL_DIR${NC}"
+    echo -e "      Direktori dibuat: $INSTALL_DIR"
 fi
 
-# Download the binary
-echo -e "${YELLOW}[*] Mengunduh rprompt...${NC}"
+echo -e "      Mengunduh dari GitHub..."
 if command -v curl &> /dev/null; then
     curl -fsSL "$BIN_URL" -o "$EXE_PATH"
 elif command -v wget &> /dev/null; then
     wget -q "$BIN_URL" -O "$EXE_PATH"
 else
-    echo -e "${RED}[!] curl atau wget tidak ditemukan. Silakan instal salah satunya.${NC}"
+    echo -e "${RED}      [✗] curl atau wget tidak ditemukan!${NC}"
     exit 1
 fi
 chmod +x "$EXE_PATH"
-echo -e "${GREEN}[+] Download selesai: $EXE_PATH${NC}"
+echo -e "${GREEN}      [✓] Terinstal di: $EXE_PATH${NC}"
 
-# Add to PATH if not already present
+# Add to PATH
 if [[ ":$PATH:" != *":$INSTALL_DIR:"* ]]; then
-    echo -e "${YELLOW}[*] Menambahkan $INSTALL_DIR ke PATH...${NC}"
-
-    SHELL_NAME=$(basename "$SHELL")
-    case "$SHELL_NAME" in
-        zsh)  PROFILE="$HOME/.zshrc" ;;
-        bash) PROFILE="$HOME/.bashrc" ;;
-        *)    PROFILE="$HOME/.profile" ;;
-    esac
-
     if ! grep -q "$INSTALL_DIR" "$PROFILE" 2>/dev/null; then
         echo "" >> "$PROFILE"
         echo "# Added by rprompt installer" >> "$PROFILE"
         echo "export PATH=\"\$PATH:$INSTALL_DIR\"" >> "$PROFILE"
-        echo -e "${GREEN}[+] PATH ditambahkan ke $PROFILE${NC}"
+        echo -e "${GREEN}      [✓] PATH ditambahkan ke $PROFILE${NC}"
     fi
-
     export PATH="$PATH:$INSTALL_DIR"
 fi
-
-# --- Environment Variables ---
 echo ""
 
-# TELEGRAM_BOT_TOKEN
-if [ -z "$TELEGRAM_BOT_TOKEN" ]; then
-    echo -e "${RED}[!] TELEGRAM_BOT_TOKEN belum diset.${NC}"
-    read -rp "    Masukkan TELEGRAM_BOT_TOKEN Anda: " TOKEN_INPUT
-    if [ -n "$TOKEN_INPUT" ]; then
-        export TELEGRAM_BOT_TOKEN="$TOKEN_INPUT"
-        echo -e "${GREEN}[+] TELEGRAM_BOT_TOKEN diset untuk sesi ini.${NC}"
-        echo -e "${YELLOW}    Tip: Tambahkan ke ~/.bashrc atau ~/.zshrc agar permanen:${NC}"
-        echo -e "${GRAY}    export TELEGRAM_BOT_TOKEN=\"$TOKEN_INPUT\"${NC}"
-    else
-        echo -e "${YELLOW}[!] Tidak ada nilai. TELEGRAM_BOT_TOKEN tetap kosong.${NC}"
+# --- Step 3: Environment Variables ---
+echo -e "${BLUE}[3/4]${NC} ${BOLD}Konfigurasi Environment${NC}"
+
+MISSING_REQUIRED=0
+
+if is_interactive; then
+    # === INTERACTIVE MODE ===
+    echo -e "      Mode: ${GREEN}Interaktif${NC} - Anda akan dipandu mengisi konfigurasi."
+    echo ""
+
+    # TELEGRAM_BOT_TOKEN
+    prompt_value "TELEGRAM_BOT_TOKEN" \
+        "Token bot Telegram dari @BotFather" \
+        "Buka @BotFather di Telegram → /newbot → copy token" \
+        "yes" || MISSING_REQUIRED=1
+
+    # ALLOWED_CHAT_IDS
+    prompt_value "ALLOWED_CHAT_IDS" \
+        "Chat ID yang diizinkan (pisahkan dengan koma)" \
+        "Kirim /start ke @userinfobot untuk mendapatkan chat ID Anda" \
+        "yes" || MISSING_REQUIRED=1
+
+    # GEMINI_CLI_TRUST_WORKSPACE
+    if [ -z "$GEMINI_CLI_TRUST_WORKSPACE" ]; then
+        export GEMINI_CLI_TRUST_WORKSPACE="true"
     fi
-else
-    echo -e "${GREEN}[+] TELEGRAM_BOT_TOKEN dimuat dari environment.${NC}"
-fi
+    echo ""
+    echo -e "${GREEN}[✓] GEMINI_CLI_TRUST_WORKSPACE = true${NC}"
 
-# ALLOWED_CHAT_IDS
-if [ -z "$ALLOWED_CHAT_IDS" ]; then
-    echo -e "${RED}[!] ALLOWED_CHAT_IDS belum diset.${NC}"
-    read -rp "    Masukkan ALLOWED_CHAT_IDS Anda: " CHAT_INPUT
-    if [ -n "$CHAT_INPUT" ]; then
-        export ALLOWED_CHAT_IDS="$CHAT_INPUT"
-        echo -e "${GREEN}[+] ALLOWED_CHAT_IDS diset untuk sesi ini.${NC}"
-        echo -e "${YELLOW}    Tip: Tambahkan ke ~/.bashrc atau ~/.zshrc agar permanen:${NC}"
-        echo -e "${GRAY}    export ALLOWED_CHAT_IDS=\"$CHAT_INPUT\"${NC}"
+    # API_TOKEN
+    if [ -z "$API_TOKEN" ]; then
+        API_TOKEN=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
+        export API_TOKEN
+        echo -e "${GREEN}[✓] API_TOKEN digenerate: ${CYAN}$API_TOKEN${NC}"
     else
-        echo -e "${YELLOW}[!] Tidak ada nilai. ALLOWED_CHAT_IDS tetap kosong.${NC}"
+        echo -e "${GREEN}[✓] API_TOKEN sudah diset.${NC}"
     fi
+
+    # Offer to save to profile
+    if [ "$MISSING_REQUIRED" -eq 0 ]; then
+        echo ""
+        echo -e "${CYAN}┌─────────────────────────────────────────────────────${NC}"
+        echo -e "${CYAN}│${NC} Simpan konfigurasi ke ${BOLD}$PROFILE${NC} agar permanen?"
+        echo -e "${CYAN}│${NC} (Anda tidak perlu memasukkan ulang saat berikutnya)"
+        echo -e "${CYAN}└─────────────────────────────────────────────────────${NC}"
+        read -rp "  Simpan? [Y/n]: " SAVE_CHOICE </dev/tty
+        SAVE_CHOICE="${SAVE_CHOICE:-Y}"
+
+        if [[ "$SAVE_CHOICE" =~ ^[Yy]$ ]]; then
+            save_to_profile "TELEGRAM_BOT_TOKEN" "$TELEGRAM_BOT_TOKEN"
+            save_to_profile "ALLOWED_CHAT_IDS" "$ALLOWED_CHAT_IDS"
+            save_to_profile "GEMINI_CLI_TRUST_WORKSPACE" "$GEMINI_CLI_TRUST_WORKSPACE"
+            save_to_profile "API_TOKEN" "$API_TOKEN"
+            echo -e "${GREEN}      [✓] Konfigurasi disimpan ke $PROFILE${NC}"
+            echo -e "${DIM}      (Berlaku otomatis di terminal baru)${NC}"
+        else
+            echo -e "${YELLOW}      [~] Tidak disimpan. Env vars hanya berlaku untuk sesi ini.${NC}"
+        fi
+    fi
+
 else
-    echo -e "${GREEN}[+] ALLOWED_CHAT_IDS dimuat dari environment.${NC}"
+    # === NON-INTERACTIVE MODE (piped via curl | bash) ===
+    echo -e "      Mode: ${YELLOW}Non-Interaktif${NC} (dijalankan via pipe)"
+    echo ""
+
+    # Check existing env vars
+    if [ -n "$TELEGRAM_BOT_TOKEN" ]; then
+        echo -e "${GREEN}      [✓] TELEGRAM_BOT_TOKEN sudah diset.${NC}"
+    else
+        echo -e "${RED}      [✗] TELEGRAM_BOT_TOKEN belum diset (WAJIB).${NC}"
+        MISSING_REQUIRED=1
+    fi
+
+    if [ -n "$ALLOWED_CHAT_IDS" ]; then
+        echo -e "${GREEN}      [✓] ALLOWED_CHAT_IDS sudah diset.${NC}"
+    else
+        echo -e "${RED}      [✗] ALLOWED_CHAT_IDS belum diset (WAJIB).${NC}"
+        MISSING_REQUIRED=1
+    fi
+
+    if [ -z "$GEMINI_CLI_TRUST_WORKSPACE" ]; then
+        export GEMINI_CLI_TRUST_WORKSPACE="true"
+    fi
+    echo -e "${GREEN}      [✓] GEMINI_CLI_TRUST_WORKSPACE = true${NC}"
+
+    if [ -z "$API_TOKEN" ]; then
+        API_TOKEN=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
+        export API_TOKEN
+    fi
+    echo -e "${GREEN}      [✓] API_TOKEN = $API_TOKEN${NC}"
 fi
 
-# GEMINI_CLI_TRUST_WORKSPACE
-if [ -z "$GEMINI_CLI_TRUST_WORKSPACE" ]; then
-    export GEMINI_CLI_TRUST_WORKSPACE="true"
-    echo -e "${GREEN}[+] GEMINI_CLI_TRUST_WORKSPACE diset ke 'true'.${NC}"
-else
-    echo -e "${GREEN}[+] GEMINI_CLI_TRUST_WORKSPACE dimuat dari environment.${NC}"
-fi
-
-# API_TOKEN
-if [ -z "$API_TOKEN" ]; then
-    API_TOKEN=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
-    export API_TOKEN
-    echo -e "${GREEN}[+] API_TOKEN digenerate untuk sesi ini.${NC}"
-    echo -e "${CYAN}    API_TOKEN Anda: $API_TOKEN${NC}"
-    echo -e "${YELLOW}    Tip: Tambahkan ke ~/.bashrc atau ~/.zshrc agar permanen:${NC}"
-    echo -e "${GRAY}    export API_TOKEN=\"$API_TOKEN\"${NC}"
-else
-    echo -e "${GREEN}[+] API_TOKEN dimuat dari environment.${NC}"
-fi
-
-# Run the binary
 echo ""
-echo -e "${YELLOW}[*] Menjalankan rprompt...${NC}"
-echo -e "${GRAY}----------------------------------------${NC}"
+
+# --- Step 4: Run or show help ---
+echo -e "${BLUE}[4/4]${NC} ${BOLD}Menjalankan rprompt${NC}"
+
+if [ "$MISSING_REQUIRED" -ne 0 ]; then
+    echo ""
+    echo -e "${RED}╔══════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${RED}║  Tidak bisa menjalankan rprompt - ada env var yang kosong!   ║${NC}"
+    echo -e "${RED}╚══════════════════════════════════════════════════════════════╝${NC}"
+    echo ""
+    echo -e "${BOLD}Cara mengatasi:${NC}"
+    echo ""
+    echo -e "${CYAN}  Opsi 1: Set env vars dulu, lalu jalankan ulang${NC}"
+    echo -e "${DIM}  ─────────────────────────────────────────────────${NC}"
+    echo ""
+    echo -e "  ${BOLD}# 1. Dapatkan token dari @BotFather di Telegram${NC}"
+    echo -e "  export TELEGRAM_BOT_TOKEN=\"your_bot_token_here\""
+    echo ""
+    echo -e "  ${BOLD}# 2. Dapatkan chat ID dari @userinfobot di Telegram${NC}"
+    echo -e "  export ALLOWED_CHAT_IDS=\"123456789\""
+    echo ""
+    echo -e "  ${BOLD}# 3. Jalankan ulang installer${NC}"
+    echo -e "  curl -fsSL https://raw.githubusercontent.com/llm-y/download/main/run.sh | bash"
+    echo ""
+    echo -e "${CYAN}  Opsi 2: Jalankan secara interaktif (guided setup)${NC}"
+    echo -e "${DIM}  ─────────────────────────────────────────────────${NC}"
+    echo ""
+    echo -e "  bash <(curl -fsSL https://raw.githubusercontent.com/llm-y/download/main/run.sh)"
+    echo ""
+    echo -e "${CYAN}  Opsi 3: Langsung jalankan rprompt (jika env sudah diset)${NC}"
+    echo -e "${DIM}  ─────────────────────────────────────────────────${NC}"
+    echo ""
+    echo -e "  rprompt"
+    echo ""
+    echo -e "${DIM}  Panduan lengkap: https://llm-y.github.io/download${NC}"
+    echo ""
+    exit 1
+fi
+
+echo ""
+echo -e "${GREEN}      Semua konfigurasi lengkap! Menjalankan rprompt...${NC}"
+echo -e "${DIM}──────────────────────────────────────────────────────────${NC}"
 echo ""
 
 exec "$EXE_PATH"
