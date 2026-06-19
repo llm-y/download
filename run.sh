@@ -180,12 +180,12 @@ if is_interactive; then
         "Kirim /start ke @userinfobot untuk mendapatkan chat ID Anda" \
         "yes" || MISSING_REQUIRED=1
 
-    # GEMINI_CLI_TRUST_WORKSPACE
-    if [ -z "$GEMINI_CLI_TRUST_WORKSPACE" ]; then
-        export GEMINI_CLI_TRUST_WORKSPACE="true"
+    # AGY_TRUST_WORKSPACE
+    if [ -z "$AGY_TRUST_WORKSPACE" ]; then
+        export AGY_TRUST_WORKSPACE="true"
     fi
     echo ""
-    echo -e "${GREEN}[✓] GEMINI_CLI_TRUST_WORKSPACE = true${NC}"
+    echo -e "${GREEN}[✓] AGY_TRUST_WORKSPACE = true${NC}"
 
     # API_TOKEN
     if [ -z "$API_TOKEN" ]; then
@@ -209,7 +209,7 @@ if is_interactive; then
         if [[ "$SAVE_CHOICE" =~ ^[Yy]$ ]]; then
             save_to_profile "TELEGRAM_BOT_TOKEN" "$TELEGRAM_BOT_TOKEN"
             save_to_profile "ALLOWED_CHAT_IDS" "$ALLOWED_CHAT_IDS"
-            save_to_profile "GEMINI_CLI_TRUST_WORKSPACE" "$GEMINI_CLI_TRUST_WORKSPACE"
+            save_to_profile "AGY_TRUST_WORKSPACE" "$AGY_TRUST_WORKSPACE"
             save_to_profile "API_TOKEN" "$API_TOKEN"
             echo -e "${GREEN}      [✓] Konfigurasi disimpan ke $PROFILE${NC}"
             echo -e "${DIM}      (Berlaku otomatis di terminal baru)${NC}"
@@ -238,10 +238,10 @@ else
         MISSING_REQUIRED=1
     fi
 
-    if [ -z "$GEMINI_CLI_TRUST_WORKSPACE" ]; then
-        export GEMINI_CLI_TRUST_WORKSPACE="true"
+    if [ -z "$AGY_TRUST_WORKSPACE" ]; then
+        export AGY_TRUST_WORKSPACE="true"
     fi
-    echo -e "${GREEN}      [✓] GEMINI_CLI_TRUST_WORKSPACE = true${NC}"
+    echo -e "${GREEN}      [✓] AGY_TRUST_WORKSPACE = true${NC}"
 
     if [ -z "$API_TOKEN" ]; then
         API_TOKEN=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)

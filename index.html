@@ -367,7 +367,7 @@
     <div class="hero">
         <span class="badge">LLM-Y</span>
         <h1>Rprompt</h1>
-        <p>Kendalikan AI (Claude, Gemini, Kiro) di komputer Anda langsung dari Telegram, dan buka API HTTP yang kompatibel dengan OpenAI.</p>
+        <p>Kendalikan AI (Claude, Agy, Kiro) di komputer Anda langsung dari Telegram, dan buka API HTTP yang kompatibel dengan OpenAI.</p>
     </div>
 
     <div class="container">
@@ -409,13 +409,13 @@
                 <li>Login: Ketik <code>claude login</code> di terminal dan ikuti instruksi.</li>
             </ul>
 
-            <h3>2. Gemini CLI</h3>
+            <h3>2. Antigravity CLI (agy)</h3>
             <ul>
                 <li>Install:</li>
             </ul>
-            <pre><code>npm install -g @google/gemini-cli</code></pre>
+            <pre><code>npm install -g @anthropic-ai/agy</code></pre>
             <ul>
-                <li>Login: Ketik <code>gemini login</code> di terminal.</li>
+                <li>Login: Ketik <code>agy login</code> di terminal.</li>
             </ul>
 
             <h3>3. Kiro CLI</h3>
@@ -577,10 +577,10 @@ response = c.chat.completions.create(
     messages=[{"role": "user", "content": "Halo Claude!"}]
 )
 
-# Atau chat dengan Gemini
+# Atau chat dengan Agy (Antigravity CLI)
 response = c.chat.completions.create(
-    model="gemini-2.5-flash", 
-    messages=[{"role": "user", "content": "Halo Gemini!"}]
+    model="agy", 
+    messages=[{"role": "user", "content": "Halo Agy!"}]
 )
 </code></pre>
 
